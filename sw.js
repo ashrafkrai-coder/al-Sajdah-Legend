@@ -1,4 +1,4 @@
-const CACHE_NAME = 'al-sajdah-v1.0.0';
+const CACHE_NAME = 'al-sajdah-v1.0.1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -8,13 +8,19 @@ const ASSETS_TO_CACHE = [
   './icons/icon-maskable-512x512.png'
 ];
 
-// Install - cache asset utama
+// Install - cache asset utama (toleran jika ada aset yang gagal)
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing...');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[SW] Caching assets');
-      return cache.addAll(ASSETS_TO_CACHE);
+      return Promise.allSettled(
+        ASSETS_TO_CACHE.map((url) =>
+          cache.add(url).catch((err) => {
+            console.warn('[SW] Skipped caching:', url, err);
+          })
+        )
+      );
     })
   );
   self.skipWaiting();
