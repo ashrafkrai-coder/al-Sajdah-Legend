@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al-Sajdah Tracker Legend</title>
+    <meta name="theme-color" content="#d4af37">
+    <meta name="description" content="Jejak hafazan al-Quran dengan sistem gamifikasi legend">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Al-Sajdah">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --bg-color: #0a0e14;
+            --gold: #d4af37;
+            --gold-light: #f7d97b;
+            --text-color: #ffffff;
+            --card-bg: #1a1f26;
+            --card-hover: #232a33;
+            --bronze: #cd7f32;
+            --silver: #c0c0c0;
+            --gold-rank: #ffd700;
+            --diamond: #4fc3f7;
+            --legend: #ab47bc;
+            --mythic: #ff3d7f;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(171, 71, 188, 0.08) 0%, transparent 50%);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+            padding-bottom: 90px;
+        }
+
+        header { text-align: center; border-bottom: 2px solid var(--gold); padding-bottom: 20px; margin-bottom: 25px; }
+        h1 {
+            background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: shine 3s linear infinite;
+            font-size: 2em;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+        .subtitle { color: #888; font-size: 0.9em; margin-top: 5px; }
+
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        .stat-box { background: var(--card-bg); border: 1px solid #2a323d; border-radius: 10px; padding: 15px; text-align: center; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: var(--gold); }
+        .stat-label { font-size: 0.8em; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .search-box {
+            flex: 1; min-width: 200px; padding: 10px 15px; background: var(--card-bg);
+            border: 1px solid var(--gold); border-radius: 25px; color: var(--text-color);
+            font-size: 0.95em; outline: none; transition: all 0.3s;
+        }
+        .search-box:focus { box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+        .filter-group { display: flex; flex-wrap: wrap; gap: 6px; }
+        .filter-btn {
+            padding: 8px 14px; background: var(--card-bg); border: 1px solid #2a323d;
+            border-radius: 20px; color: var(--text-color); cursor: pointer; font-size: 0.8em; font-weight: bold; transition: all 0.2s;
+        }
+        .filter-btn:hover { border-color: var(--gold); }
+        .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+
+        .card-murid {
+            background: var(--card-bg); border: 2px solid #2a323d; border-radius: 15px;
+            padding: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px;
+            cursor: pointer; transition: all 0.3s; animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .card-murid:hover { background: var(--card-hover); transform: translateX(5px); border-color: var(--gold); }
+        .card-murid.rank-mythic { border-color: var(--mythic); box-shadow: 0 0 20px rgba(255, 61, 127, 0.3); animation: fadeIn 0.5s ease-out, mythicPulse 2s ease-in-out infinite; }
+        @keyframes mythicPulse { 0%, 100% { box-shadow: 0 0 20px rgba(255, 61, 127, 0.3); } 50% { box-shadow: 0 0 30px rgba(255, 61, 127, 0.6); } }
+        .card-murid.rank-legend { border-color: var(--legend); box-shadow: 0 0 15px rgba(171, 71, 188, 0.25); }
+        .card-murid.rank-diamond { border-color: var(--diamond); }
+
+        .avatar {
+            width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.4em; color: #000; flex-shrink: 0;
+            border: 2px solid var(--gold);
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            overflow: hidden; position: relative;
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .progress-container { flex-grow: 1; min-width: 0; }
+        .name-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+        .murid-name { font-weight: bold; font-size: 1em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .rank-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.7em; font-weight: bold; letter-spacing: 1px; color: #000; text-transform: uppercase; }
+        .rank-bronze { background: var(--bronze); } .rank-silver { background: var(--silver); }
+        .rank-gold { background: var(--gold-rank); } .rank-diamond { background: var(--diamond); }
+        .rank-legend { background: var(--legend); color: #fff; }
+        .rank-mythic { background: linear-gradient(90deg, var(--mythic), #ff8fa3, var(--mythic)); background-size: 200% auto; color: #fff; animation: shine 2s linear infinite; }
+
+        .bar-bg { background: #000; height: 12px; border-radius: 6px; overflow: hidden; position: relative; }
+        .bar-fill { height: 100%; border-radius: 6px; transition: width 1s ease-out; position: relative; }
+        .bar-bronze { background: linear-gradient(90deg, #8b4513, var(--bronze)); }
+        .bar-silver { background: linear-gradient(90deg, #808080, var(--silver)); }
+        .bar-gold { background: linear-gradient(90deg, #b8860b, var(--gold-rank)); }
+        .bar-diamond { background: linear-gradient(90deg, #0288d1, var(--diamond)); }
+        .bar-legend { background: linear-gradient(90deg, #7b1fa2, var(--legend)); }
+        .bar-mythic { background: linear-gradient(90deg, var(--mythic), #ff8fa3, var(--mythic)); background-size: 200% auto; animation: shine 2s linear infinite; }
+        .bar-mythic::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: shimmer 2s infinite; }
+        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        .info-row { display: flex; justify-content: space-between; margin-top: 6px; font-size: 0.8em; color: #aaa; flex-wrap: wrap; gap: 8px; }
+        .stats-mini span { margin-right: 10px; }
+
+        .galaxy-container {
+            position: relative;
+            width: 100%;
+            height: 80px;
+            background: radial-gradient(ellipse at center, #0f1318 0%, #000 100%);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+            border: 1px solid #2a323d;
+        }
+
+        .galaxy-star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--gold);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--gold), 0 0 12px var(--gold-light);
+            animation: starGlow 2s ease-in-out infinite;
+        }
+
+        .galaxy-star.large {
+            width: 6px;
+            height: 6px;
+            background: var(--gold-light);
+            box-shadow: 0 0 8px var(--gold), 0 0 16px var(--gold-light), 0 0 24px var(--gold);
+        }
+
+        .galaxy-star::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        @keyframes starGlow {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.3); }
+        }
+
+        .galaxy-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            transform-origin: left center;
+            opacity: 0.3;
+        }
+
+        .galaxy-count {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 0.75em;
+            color: var(--gold);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
+        }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); z-index: 100; justify-content: center; align-items: center; padding: 20px; animation: fadeIn 0.3s; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--card-bg); border: 2px solid var(--gold); border-radius: 20px; padding: 30px; max-width: 450px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 0 40px rgba(212, 175, 55, 0.4); }
+        .modal-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--gold); font-size: 1.5em; cursor: pointer; }
+        .modal-header { text-align: center; margin-bottom: 20px; }
+
+        .modal-avatar {
+            width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5em; font-weight: bold; color: #000;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            border: 3px solid var(--gold); overflow: hidden; position: relative;
+            cursor: pointer; transition: transform 0.3s;
+        }
+        .modal-avatar:hover { transform: scale(1.05); }
+        .modal-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .modal-avatar .upload-hint {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.7); color: var(--gold); font-size: 0.35em;
+            padding: 6px; text-align: center; opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-avatar:hover .upload-hint { opacity: 1; }
+
+        .modal-name { font-size: 1.4em; color: var(--gold); margin: 5px 0; }
+        .modal-class { color: #888; font-size: 0.9em; }
+        .modal-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .modal-stat { background: #0f1318; padding: 12px; border-radius: 10px; text-align: center; }
+        .modal-stat-value { font-size: 1.3em; font-weight: bold; color: var(--gold); }
+        .modal-stat-label { font-size: 0.75em; color: #888; text-transform: uppercase; }
+        .badges-section h3 { color: var(--gold); font-size: 0.95em; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .badges-list { display: flex; flex-wrap: wrap; gap: 8px; }
+        .badge-item { background: #0f1318; padding: 6px 12px; border-radius: 15px; font-size: 0.85em; border: 1px solid #2a323d; }
+        .empty-state { text-align: center; padding: 40px; color: #666; }
+
+        .btn-action {
+            width: 100%; padding: 10px; border: none; border-radius: 10px;
+            cursor: pointer; font-weight: bold; font-size: 0.9em; margin-top: 10px;
+            transition: all 0.3s;
+        }
+        .btn-add-star { background: var(--gold); color: #000; }
+        .btn-add-star:hover { background: var(--gold-light); transform: scale(1.02); }
+        .btn-delete { background: #8b0000; color: #fff; }
+        .btn-delete:hover { background: #a00000; }
+        .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--gold);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: var(--gold); font-size: 1.2em; }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--card-bg);
+            border: 2px solid var(--gold);
+            color: var(--text-color);
+            padding: 12px 24px;
+            border-radius: 10px;
+            z-index: 10000;
+            animation: slideUp 0.3s ease-out;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        @media (max-width: 500px) {
+            body { padding: 12px; } h1 { font-size: 1.4em; }
+            .avatar { width: 50px; height: 50px; font-size: 1.1em; }
+            .card-murid { padding: 14px; gap: 12px; }
+            .modal-avatar { width: 100px; height: 100px; font-size: 2em; }
+            .galaxy-container { height: 60px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Memuatkan data...</div>
+    </div>
+
+    <header>
+        <h1>Al-Sajdah Legend</h1>
+        <p class="subtitle">Jejak Hafazan • Khamis, 16 Julai 2026</p>
+    </header>
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="controls">
+        <input type="text" class="search-box" id="searchBox" placeholder="🔍 Cari nama murid...">
+        <div class="filter-group" id="filterGroup">
+            <button class="filter-btn active" data-rank="all">Semua</button>
+            <button class="filter-btn" data-rank="mythic">Mythic</button>
+            <button class="filter-btn" data-rank="legend">Legend</button>
+            <button class="filter-btn" data-rank="diamond">Diamond</button>
+            <button class="filter-btn" data-rank="gold">Gold</button>
+            <button class="filter-btn" data-rank="silver">Silver</button>
+            <button class="filter-btn" data-rank="bronze">Bronze</button>
+        </div>
+    </div>
+
+    <div id="muridList"></div>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <input type="file" id="fotoInput" accept="image/*" style="display: none;">
+
+    <script>
+        // ===== SUPABASE CONFIG =====
+        const SUPABASE_URL = 'https://ajhmwbuxtehkqoqlgqfc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFqaG13YnV4dGVoa3FvcWxncWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMTI1MDksImV4cCI6MjA5OTY4ODUwOX0.KH31HCi4Vf0V1XTljb_XRCG8DHNs9veL-tJ_lOvbgAE';
+        const TABLE_NAME = 'hafazan_records';
+        const STORAGE_BUCKET = 'foto-murid';
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ===== DATA MURID =====
+        let muridData = [];
+        let currentModalIndex = null;
+        const fotoInput = document.getElementById('fotoInput');
+
+        // ===== FUNGSI UTAMA =====
+        function getRank(peratus) {
+            if (peratus >= 96) return { name: "MYTHIC", class: "mythic" };
+            if (peratus >= 81) return { name: "LEGEND", class: "legend" };
+            if (peratus >= 61) return { name: "DIAMOND", class: "diamond" };
+            if (peratus >= 41) return { name: "GOLD", class: "gold" };
+            if (peratus >= 21) return { name: "SILVER", class: "silver" };
+            return { name: "BRONZE", class: "bronze" };
+        }
+
+        function getInitial(nama) {
+            return nama.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+        }
+
+        function showToast(message, duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), duration);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+
+        // Normalize data untuk pastikan nama_murid dipetakan ke nama
+        function normalizeData(data) {
+            return data.map(row => ({
+                id: row.id,
+                nama: row.nama_murid || row.nama || 'Tanpa Nama',
+                kelas: row.kelas || '-',
+                surah: row.surah || '-',
+                peratus: row.peratus || 0,
+                streak: row.streak || 0,
+                xp: row.xp || 0,
+                bintang: row.bintang || 0,
+                foto_url: row.foto_url,
+                lencana: Array.isArray(row.lencana) 
+                    ? row.lencana 
+                    : (typeof row.lencana === 'string' ? JSON.parse(row.lencana) : [])
+            }));
+        }
+
+        // ===== LOAD DATA DARI SUPABASE =====
+        async function loadMuridData() {
+            showLoading(true);
+            try {
+                const { data, error } = await supabaseClient
+                    .from(TABLE_NAME)
+                    .select('*')
+                    .order('peratus', { ascending: false });
+                
+                if (error) throw error;
+                
+                muridData = normalizeData(data || []);
+                
+                if (muridData.length === 0) {
+                    await seedDefaultData();
+                }
+                
+                renderStats();
+                applyFilters();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showToast('❌ Gagal memuatkan data: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ===== SEED DATA DEFAULT =====
+        async function seedDefaultData() {
+            const defaultData = [
+                { nama_murid: "Ahmad bin Ali", kelas: "4 Ar-Rahman", surah: "Al-Baqarah", peratus: 98, streak: 45, xp: 2850, bintang: 42, lencana: ["🏆 Hafiz Muda", "🔥 Streak Master", "⭐ Top 3"] },
+                { nama_murid: "Siti Aisyah binti Hassan", kelas: "5 Al-Furqan", surah: "Ali 'Imran", peratus: 92, streak: 30, xp: 2400, bintang: 35, lencana: ["💎 Diamond Hafiz", "🔥 Streak Master"] },
+                { nama_murid: "Muhammad Irfan", kelas: "4 Ar-Rahman", surah: "An-Nisa'", peratus: 85, streak: 22, xp: 1980, bintang: 28, lencana: ["🌟 Legend Rising", "📖 10 Juzuk"] },
+                { nama_murid: "Nur Aina binti Zainal", kelas: "6 An-Nur", surah: "Al-Maidah", peratus: 78, streak: 18, xp: 1650, bintang: 22, lencana: ["🌟 Legend Rising"] }
+            ];
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from(TABLE_NAME)
+                    .insert(defaultData)
+                    .select();
+                
+                if (error) throw error;
+                muridData = normalizeData(data);
+                showToast('✅ Data default berjaya dimuatkan');
+            } catch (error) {
+                console.error('Error seeding data:', error);
+            }
+        }
+
+        // ===== RENDER AVATAR =====
+        function renderAvatar(murid) {
+            const initial = getInitial(murid.nama);
+            if (murid.foto_url) {
+                return `<div class="avatar"><img src="${murid.foto_url}" alt="${murid.nama}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='${initial}'"></div>`;
+            }
+            return `<div class="avatar">${initial}</div>`;
+        }
+
+        // ===== RENDER GALAXY BINTANG =====
+        function renderGalaxy(bintangCount) {
+            const maxStars = Math.min(bintangCount, 30);
+            let html = '<div class="galaxy-container">';
+            
+            const starPositions = [];
+            for (let i = 0; i < maxStars; i++) {
+                const x = Math.random() * 90 + 5;
+                const y = Math.random() * 70 + 10;
+                const isLarge = i < 3;
+                const delay = Math.random() * 2;
+                
+                starPositions.push({ x, y });
+                html += `<div class="galaxy-star ${isLarge ? 'large' : ''}" style="left: ${x}%; top: ${y}%; animation-delay: ${delay}s;"></div>`;
+            }
+            
+            for (let i = 0; i < starPositions.length - 1; i++) {
+                for (let j = i + 1; j < starPositions.length; j++) {
+                    const dx = starPositions[j].x - starPositions[i].x;
+                    const dy = starPositions[j].y - starPositions[i].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 25) {
+                        const length = distance;
+                        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                        html += `<div class="galaxy-line" style="left: ${starPositions[i].x}%; top: ${starPositions[i].y}%; width: ${length}%; transform: rotate(${angle}deg);"></div>`;
+                    }
+                }
+            }
+            
+            html += `<div class="galaxy-count">⭐ ${bintangCount} Bintang</div></div>`;
+            return html;
+        }
+
+        // ===== RENDER SENARAI =====
+        function renderMurid(list) {
+            const container = document.getElementById('muridList');
+            if (list.length === 0) {
+                container.innerHTML = '<div class="empty-state">Tiada murid ditemui 📭</div>';
+                return;
+            }
+            container.innerHTML = list.map((m, i) => {
+                const rank = getRank(m.peratus);
+                const originalIndex = muridData.findIndex(x => x.id === m.id);
+                return `
+                    <div class="card-murid rank-${rank.class}" onclick="showModal(${originalIndex})" style="animation-delay: ${i * 0.05}s">
+                        ${renderAvatar(m)}
+                        <div class="progress-container">
+                            <div class="name-row">
+                                <span class="murid-name">${m.nama}</span>
+                                <span class="rank-badge rank-${rank.class}">${rank.name}</span>
+                            </div>
+                            <div class="bar-bg">
+                                <div class="bar-fill bar-${rank.class}" style="width: ${m.peratus}%"></div>
+                            </div>
+                            <div class="info-row">
+                                <span>📖 ${m.surah}: ${m.peratus}%</span>
+                                <span class="stats-mini">
+                                    <span>⭐ ${m.bintang}</span>
+                                    <span>🔥 ${m.streak}</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== RENDER STATISTIK =====
+        function renderStats() {
+            const total = muridData.length;
+            const avg = total > 0 ? Math.round(muridData.reduce((s, m) => s + m.peratus, 0) / total) : 0;
+            const topStreak = total > 0 ? Math.max(...muridData.map(m => m.streak)) : 0;
+            const mythicCount = muridData.filter(m => m.peratus >= 96).length;
+            const totalBintang = muridData.reduce((s, m) => s + m.bintang, 0);
+
+            document.getElementById('statsRow').innerHTML = `
+                <div class="stat-box"><div class="stat-value">${total}</div><div class="stat-label">Jumlah Murid</div></div>
+                <div class="stat-box"><div class="stat-value">${avg}%</div><div class="stat-label">Purata Hafazan</div></div>
+                <div class="stat-box"><div class="stat-value">⭐ ${totalBintang}</div><div class="stat-label">Total Bintang</div></div>
+                <div class="stat-box"><div class="stat-value">${mythicCount}</div><div class="stat-label">Mythic Rank</div></div>
+            `;
+        }
+
+        // ===== MODAL =====
+        function showModal(index) {
+            currentModalIndex = index;
+            const m = muridData[index];
+            const rank = getRank(m.peratus);
+            const initial = getInitial(m.nama);
+
+            let avatarHTML = '';
+            if (m.foto_url) {
+                avatarHTML = `<img src="${m.foto_url}" alt="${m.nama}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='${initial}'">
+                              <div class="upload-hint">📷 Klik untuk tukar foto</div>`;
+            } else {
+                avatarHTML = `${initial}<div class="upload-hint">📷 Klik untuk tambah foto</div>`;
+            }
+
+            const lencana = Array.isArray(m.lencana) ? m.lencana : [];
+
+            document.getElementById('modalContent').innerHTML = `
+                <div class="modal-header">
+                    <div class="modal-avatar" onclick="triggerUpload()">${avatarHTML}</div>
+                    <div class="modal-name">${m.nama}</div>
+                    <div class="modal-class">${m.kelas}</div>
+                    <div style="margin-top: 10px;"><span class="rank-badge rank-${rank.class}">${rank.name}</span></div>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <h3 style="color: var(--gold); font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">🌌 Galaxy Bintang</h3>
+                    ${renderGalaxy(m.bintang)}
+                </div>
+
+                <div class="modal-stats">
+                    <div class="modal-stat"><div class="modal-stat-value">${m.peratus}%</div><div class="modal-stat-label">Hafazan</div></div>
+                    <div class="modal-stat"><div class="modal-stat-value" style="color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5);">⭐ ${m.bintang}</div><div class="modal-stat-label">Jumlah Bintang</div></div>
+                    <div class="modal-stat"><div class="modal-stat-value">🔥 ${m.streak}</div><div class="modal-stat-label">Streak</div></div>
+                </div>
+                <div style="background: #0f1318; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center;">
+                    <div style="color: #888; font-size: 0.85em;">Surah Dihafaz</div>
+                    <div style="color: var(--gold); font-size: 1.2em; font-weight: bold; margin-top: 5px;">📖 ${m.surah}</div>
+                </div>
+                <div class="badges-section">
+                    <h3>🏅 Lencana Diperoleh</h3>
+                    <div class="badges-list">${lencana.map(l => `<div class="badge-item">${l}</div>`).join('')}</div>
+                </div>
+                <button class="btn-action btn-add-star" onclick="tambahBintang()">➕ Tambah 1 Bintang</button>
+                ${m.foto_url ? `<button class="btn-action btn-delete" onclick="hapusFoto()">🗑️ Padam Foto</button>` : ''}
+            `;
+            document.getElementById('modalOverlay').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            currentModalIndex = null;
+        }
+
+        document.getElementById('modalOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'modalOverlay') closeModal();
+        });
+
+        // ===== UPLOAD FOTO =====
+        function triggerUpload() {
+            if (currentModalIndex !== null) fotoInput.click();
+        }
+
+        fotoInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file || currentModalIndex === null) return;
+            
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('❌ Saiz fail terlalu besar! Maksimum 2MB.');
+                return;
+            }
+            
+            showLoading(true);
+            const murid = muridData[currentModalIndex];
+            
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${murid.id}_${Date.now()}.${fileExt}`;
+                
+                const { error: uploadError } = await supabaseClient
+                    .storage
+                    .from(STORAGE_BUCKET)
+                    .upload(fileName, file, { cacheControl: '3600', upsert: false });
+                
+                if (uploadError) throw uploadError;
+                
+                const { data: urlData } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(fileName);
+                const fotoUrl = urlData.publicUrl;
+                
+                const { error: dbError } = await supabaseClient
+                    .from(TABLE_NAME)
+                    .update({ foto_url: fotoUrl })
+                    .eq('id', murid.id);
+                
+                if (dbError) throw dbError;
+                
+                muridData[currentModalIndex].foto_url = fotoUrl;
+                showModal(currentModalIndex);
+                applyFilters();
+                showToast('✅ Foto berjaya dimuat naik');
+                
+            } catch (error) {
+                console.error('Error upload foto:', error);
+                showToast('❌ Gagal upload foto: ' + error.message);
+            } finally {
+                showLoading(false);
+                fotoInput.value = '';
+            }
+        });
+
+        // ===== HAPUS FOTO =====
+        async function hapusFoto() {
+            if (currentModalIndex === null || !confirm('Padam foto murid ini?')) return;
+            
+            showLoading(true);
+            const murid = muridData[currentModalIndex];
+            
+            try {
+                if (murid.foto_url) {
+                    const filePath = murid.foto_url.split(`${STORAGE_BUCKET}/`)[1];
+                    if (filePath) {
+                        await supabaseClient.storage.from(STORAGE_BUCKET).remove([filePath]);
+                    }
+                }
+                
+                const { error } = await supabaseClient
+                    .from(TABLE_NAME)
+                    .update({ foto_url: null })
+                    .eq('id', murid.id);
+                
+                if (error) throw error;
+                
+                muridData[currentModalIndex].foto_url = null;
+                showModal(currentModalIndex);
+                applyFilters();
+                showToast('✅ Foto berjaya dipadam');
+                
+            } catch (error) {
+                console.error('Error hapus foto:', error);
+                showToast('❌ Gagal padam foto: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ===== TAMBAH BINTANG =====
+        async function tambahBintang() {
+            if (currentModalIndex === null) return;
+            
+            const murid = muridData[currentModalIndex];
+            const newBintang = murid.bintang + 1;
+            
+            showLoading(true);
+            try {
+                const { error } = await supabaseClient
+                    .from(TABLE_NAME)
+                    .update({ bintang: newBintang })
+                    .eq('id', murid.id);
+                
+                if (error) throw error;
+                
+                muridData[currentModalIndex].bintang = newBintang;
+                showModal(currentModalIndex);
+                applyFilters();
+                renderStats();
+                showToast('⭐ Bintang ditambah!');
+                
+            } catch (error) {
+                console.error('Error update bintang:', error);
+                showToast('❌ Gagal simpan bintang: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ===== FILTER & SEARCH =====
+        let currentRank = 'all';
+        function applyFilters() {
+            const search = document.getElementById('searchBox').value.toLowerCase();
+            let filtered = muridData.filter(m => 
+                m.nama.toLowerCase().includes(search) || (m.kelas && m.kelas.toLowerCase().includes(search))
+            );
+            if (currentRank !== 'all') {
+                filtered = filtered.filter(m => getRank(m.peratus).class === currentRank);
+            }
+            filtered.sort((a, b) => b.peratus - a.peratus);
+            renderMurid(filtered);
+        }
+
+        document.getElementById('searchBox').addEventListener('input', applyFilters);
+        document.getElementById('filterGroup').addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentRank = e.target.dataset.rank;
+                applyFilters();
+            }
+        });
+
+        // ===== INIT =====
+        loadMuridData();
+    </script>
+
+    <!-- PWA: Service Worker & Install Prompt -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => console.log('SW registered:', registration.scope))
+                    .catch((error) => console.log('SW registration failed:', error));
+            });
+        }
+
+        let deferredPrompt;
+        let installButton = null;
+
+        function createInstallButton() {
+            if (installButton) return;
+            installButton = document.createElement('button');
+            installButton.id = 'installBtn';
+            installButton.innerHTML = '📲 Pasang Aplikasi';
+            installButton.style.cssText = `
+                position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
+                background: linear-gradient(135deg, #d4af37, #f7d97b); color: #000;
+                border: none; border-radius: 25px; font-weight: bold; cursor: pointer;
+                box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); z-index: 1000;
+                font-size: 0.9em; transition: all 0.3s; font-family: 'Segoe UI', sans-serif;
+            `;
+            installButton.onmouseover = () => installButton.style.transform = 'scale(1.05)';
+            installButton.onmouseout = () => installButton.style.transform = 'scale(1)';
+            document.body.appendChild(installButton);
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            createInstallButton();
+        });
+
+        document.addEventListener('click', async (e) => {
+            if (e.target.id === 'installBtn' && deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                if (installButton) installButton.remove();
+                installButton = null;
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            if (installButton) installButton.remove();
+            installButton = null;
+        });
+    </script>
+</body>
+</html>
