@@ -1,8 +1,15 @@
 # Plan: Fix Missing PWA Icons (Al-Sajdah Tracker Legend)
 
 ## Context / Problem
-- The PWA references icon files that do not exist inside the project. There is no `icons/` directory in the project root (`C:\Users\SMKTAMANMEDANPERANTI\Documents\New folder\al-Sajdah-Legend`).
+- The PWA references icon files that do not exist inside the project. There is no `icons/` directory in the project root (`C:\Users\SMKTAMANMEDANPERANTI\Documents\New folder\al-Sajdah-Legend`) — verified 2026-07-18: root contains only `.git`, `.kilo`, `data.json`, `index.html`, `manifest.json`, `sw.js`. No `favicon.ico` at root either.
 - The user has a generated icon set in an **external** folder: `C:\Users\SMKTAMANMEDANPERANTI\Documents\al-Sajdah Legend\pwa_icons` (NOTE: different path — no "New folder", space in "al-Sajdah Legend").
+
+### IMPORTANT: duplicate project + icon placement
+- There are **two copies** of this project:
+  1. **This workspace (the REAL/target project):** `C:\Users\SMKTAMANMEDANPERANTI\Documents\New folder\al-Sajdah-Legend` — confirmed by the user as the real one.
+  2. A duplicate: `C:\Users\SMKTAMANMEDANPERANTI\Documents\al-Sajdah Legend` (contains `pwa_icons/` and loose `icon-192x192.png` / `icon-512x512.png` at its root; its `manifest.json` is byte-identical to this workspace's).
+- The user reported "icons already added", but they were dropped as **loose root files in the DUPLICATE folder**, NOT in this workspace and NOT in any `icons/` subfolder. Therefore the icons still must be copied INTO this workspace's `icons/` subfolder (Task 1 is still required).
+- The `manifest.json`/`sw.js`/`index.html` reference `./icons/...` paths, so loose root icons would not satisfy them regardless of folder.
 
 ### Icon files available in `pwa_icons/` (verified by directory listing)
 `favicon.ico`, and PNGs: `16, 32, 48, 57, 60, 72, 76, 96, 114, 120, 128, 144, 152, 167, 180, 192, 256, 384, 512`, plus `manifest-icons-snippet.json`.
