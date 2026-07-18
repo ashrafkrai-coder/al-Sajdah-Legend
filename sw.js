@@ -1,11 +1,10 @@
-const CACHE_NAME = 'al-sajdah-v1.0.1';
+const CACHE_NAME = 'al-sajdah-v1.0.2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icons/icon-192x192.png',
-  './icons/icon-512x512.png',
-  './icons/icon-maskable-512x512.png'
+  './icon-192x192.png',
+  './icon-512x512.png'
 ];
 
 // Install - cache asset utama (toleran jika ada aset yang gagal)
