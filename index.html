@@ -10,9 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Al-Sajdah">
     <link rel="manifest" href="./manifest.json">
-    <link rel="icon" type="image/png" sizes="192x192" href="./icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="./icon-512x512.png">
-    <link rel="apple-touch-icon" href="./icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
 
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -47,7 +46,13 @@
             padding-bottom: 90px;
         }
 
-        header { text-align: center; border-bottom: 2px solid var(--gold); padding-bottom: 20px; margin-bottom: 25px; }
+        header { 
+            text-align: center; 
+            border-bottom: 2px solid var(--gold); 
+            padding-bottom: 20px; 
+            margin-bottom: 25px;
+            position: relative;
+        }
         h1 {
             background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
             background-size: 200% auto;
@@ -61,6 +66,44 @@
         }
         @keyframes shine { to { background-position: 200% center; } }
         .subtitle { color: #888; font-size: 0.9em; margin-top: 5px; }
+
+        /* Auth Status Bar */
+        .auth-bar {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75em;
+        }
+        .auth-status {
+            color: var(--gold);
+            font-weight: 600;
+        }
+        .btn-auth {
+            padding: 6px 12px;
+            border-radius: 15px;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-auth:hover {
+            background: var(--gold);
+            color: #000;
+        }
+        .btn-auth.logout {
+            border-color: #ff3b30;
+            color: #ff3b30;
+        }
+        .btn-auth.logout:hover {
+            background: #ff3b30;
+            color: #fff;
+        }
 
         .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 25px; }
         .stat-box { background: var(--card-bg); border: 1px solid #2a323d; border-radius: 10px; padding: 15px; text-align: center; }
@@ -138,56 +181,30 @@
             margin: 15px 0;
             border: 1px solid #2a323d;
         }
-
         .galaxy-star {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: var(--gold);
-            border-radius: 50%;
-            box-shadow: 0 0 6px var(--gold), 0 0 12px var(--gold-light);
+            position: absolute; width: 4px; height: 4px; background: var(--gold);
+            border-radius: 50%; box-shadow: 0 0 6px var(--gold), 0 0 12px var(--gold-light);
             animation: starGlow 2s ease-in-out infinite;
         }
-
         .galaxy-star.large {
-            width: 6px;
-            height: 6px;
-            background: var(--gold-light);
+            width: 6px; height: 6px; background: var(--gold-light);
             box-shadow: 0 0 8px var(--gold), 0 0 16px var(--gold-light), 0 0 24px var(--gold);
         }
-
         .galaxy-star::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
+            content: ''; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); width: 20px; height: 20px;
             background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
             border-radius: 50%;
         }
-
-        @keyframes starGlow {
-            0%, 100% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.3); }
-        }
-
+        @keyframes starGlow { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.3); } }
         .galaxy-line {
-            position: absolute;
-            height: 1px;
+            position: absolute; height: 1px;
             background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            transform-origin: left center;
-            opacity: 0.3;
+            transform-origin: left center; opacity: 0.3;
         }
-
         .galaxy-count {
-            position: absolute;
-            bottom: 5px;
-            right: 10px;
-            font-size: 0.75em;
-            color: var(--gold);
-            font-weight: bold;
+            position: absolute; bottom: 5px; right: 10px;
+            font-size: 0.75em; color: var(--gold); font-weight: bold;
             text-shadow: 0 0 5px rgba(212, 175, 55, 0.5);
         }
 
@@ -214,6 +231,11 @@
         }
         .modal-avatar:hover .upload-hint { opacity: 1; }
 
+        /* Guest mode - hide upload hint */
+        .modal-avatar.guest { cursor: default; }
+        .modal-avatar.guest:hover { transform: none; }
+        .modal-avatar.guest .upload-hint { display: none; }
+
         .modal-name { font-size: 1.4em; color: var(--gold); margin: 5px 0; }
         .modal-class { color: #888; font-size: 0.9em; }
         .modal-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
@@ -236,45 +258,115 @@
         .btn-delete:hover { background: #a00000; }
         .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        /* Hide action buttons for guests */
+        .btn-action.guest-only { display: none; }
+
         .loading-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            flex-direction: column;
-            gap: 20px;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 9999; flex-direction: column; gap: 20px;
         }
         .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--gold);
-            border-top-color: transparent;
-            border-radius: 50%;
+            width: 50px; height: 50px; border: 4px solid var(--gold);
+            border-top-color: transparent; border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-text { color: var(--gold); font-size: 1.2em; }
 
         .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--card-bg);
-            border: 2px solid var(--gold);
-            color: var(--text-color);
-            padding: 12px 24px;
-            border-radius: 10px;
-            z-index: 10000;
-            animation: slideUp 0.3s ease-out;
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: var(--card-bg); border: 2px solid var(--gold);
+            color: var(--text-color); padding: 12px 24px; border-radius: 10px;
+            z-index: 10000; animation: slideUp 0.3s ease-out;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
         @keyframes slideUp {
             from { opacity: 0; transform: translate(-50%, 20px); }
             to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        /* Login Modal */
+        .login-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .login-overlay.active { display: flex; }
+        .login-box {
+            background: var(--card-bg);
+            border: 2px solid var(--gold);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
+        }
+        .login-box h2 {
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .login-field {
+            margin-bottom: 15px;
+        }
+        .login-field label {
+            display: block;
+            color: var(--gold);
+            font-size: 0.85em;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .login-field input {
+            width: 100%;
+            padding: 12px;
+            background: #0f1318;
+            border: 1px solid #2a323d;
+            border-radius: 10px;
+            color: var(--text-color);
+            font-size: 1em;
+            outline: none;
+        }
+        .login-field input:focus { border-color: var(--gold); }
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+        .login-error {
+            background: #8b0000;
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            display: none;
+        }
+        .login-error.show { display: block; }
+        .login-switch {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.85em;
+            color: #888;
+        }
+        .login-switch a {
+            color: var(--gold);
+            cursor: pointer;
+            text-decoration: underline;
         }
 
         @media (max-width: 500px) {
@@ -283,6 +375,7 @@
             .card-murid { padding: 14px; gap: 12px; }
             .modal-avatar { width: 100px; height: 100px; font-size: 2em; }
             .galaxy-container { height: 60px; }
+            .auth-bar { position: static; margin-top: 10px; justify-content: center; }
         }
     </style>
 </head>
@@ -296,7 +389,10 @@
 
     <header>
         <h1>Al-Sajdah Legend</h1>
-        <p class="subtitle">Jejak Hafazan • Khamis, 16 Julai 2026</p>
+        <p class="subtitle">Jejak Hafazan • Dashboard</p>
+        <div class="auth-bar" id="authBar">
+            <!-- Auth buttons will be inserted here -->
+        </div>
     </header>
 
     <div class="stats-row" id="statsRow"></div>
@@ -316,10 +412,53 @@
 
     <div id="muridList"></div>
 
+    <!-- Modal Detail Murid -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <button class="modal-close" onclick="closeModal()">✕</button>
             <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <!-- Login/Register Modal -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-box">
+            <h2 id="loginTitle">🔐 Login Guru</h2>
+            <div class="login-error" id="loginError"></div>
+            
+            <div id="loginForm">
+                <div class="login-field">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="guru@sekolah.edu.my">
+                </div>
+                <div class="login-field">
+                    <label>Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                </div>
+                <button class="btn-login" id="btnLoginSubmit" onclick="handleLogin()">Login</button>
+                <div class="login-switch">
+                    Belum ada akaun? <a onclick="showRegister()">Daftar di sini</a>
+                </div>
+            </div>
+
+            <div id="registerForm" style="display: none;">
+                <div class="login-field">
+                    <label>Email</label>
+                    <input type="email" id="regEmail" placeholder="guru@sekolah.edu.my">
+                </div>
+                <div class="login-field">
+                    <label>Password (min 6 aksara)</label>
+                    <input type="password" id="regPassword" placeholder="••••••••">
+                </div>
+                <button class="btn-login" id="btnRegSubmit" onclick="handleRegister()">Daftar Akaun</button>
+                <div class="login-switch">
+                    Sudah ada akaun? <a onclick="showLogin()">Login di sini</a>
+                </div>
+            </div>
+
+            <div class="login-switch" style="margin-top: 20px;">
+                <a onclick="closeLoginModal()">← Kembali ke Dashboard</a>
+            </div>
         </div>
     </div>
 
@@ -334,12 +473,192 @@
 
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // ===== AUTH STATE =====
+        let currentUser = null;
+        let isLoggedIn = false;
+
+        // Check auth status on load
+        async function checkAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                isLoggedIn = true;
+            }
+            updateAuthUI();
+        }
+
+        // Listen to auth changes
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN') {
+                currentUser = session.user;
+                isLoggedIn = true;
+                showToast('✅ Login berjaya! Selamat datang, ' + currentUser.email);
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                isLoggedIn = false;
+                showToast('👋 Anda telah logout');
+            }
+            updateAuthUI();
+            // Re-render modal if open
+            if (currentModalIndex !== null) {
+                showModal(currentModalIndex);
+            }
+        });
+
+        function updateAuthUI() {
+            const authBar = document.getElementById('authBar');
+            if (isLoggedIn && currentUser) {
+                const email = currentUser.email;
+                const shortEmail = email.length > 20 ? email.substring(0, 20) + '...' : email;
+                authBar.innerHTML = `
+                    <span class="auth-status">👤 ${shortEmail}</span>
+                    <button class="btn-auth logout" onclick="handleLogout()">Logout</button>
+                `;
+            } else {
+                authBar.innerHTML = `
+                    <button class="btn-auth" onclick="showLoginModal()">🔐 Login Guru</button>
+                `;
+            }
+        }
+
+        // ===== AUTH FUNCTIONS =====
+        function showLoginModal() {
+            document.getElementById('loginOverlay').classList.add('active');
+            showLogin();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginOverlay').classList.remove('active');
+            document.getElementById('loginError').classList.remove('show');
+        }
+
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            document.getElementById('loginTitle').textContent = '🔐 Login Guru';
+            document.getElementById('btnLoginSubmit').textContent = 'Login';
+        }
+
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            document.getElementById('loginTitle').textContent = '📝 Daftar Akaun Guru';
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('btnLoginSubmit');
+            const errorDiv = document.getElementById('loginError');
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Sila masukkan email dan password';
+                errorDiv.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            errorDiv.classList.remove('show');
+
+            try {
+                const { error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                closeLoginModal();
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+            } catch (err) {
+                errorDiv.textContent = 'Login gagal: ' + err.message;
+                errorDiv.classList.add('show');
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        }
+
+        async function handleRegister() {
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const btn = document.getElementById('btnRegSubmit');
+            const errorDiv = document.getElementById('loginError');
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Sila masukkan email dan password';
+                errorDiv.classList.add('show');
+                return;
+            }
+
+            if (password.length < 6) {
+                errorDiv.textContent = 'Password mesti sekurang-kurangnya 6 aksara';
+                errorDiv.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Mendaftar...';
+            errorDiv.classList.remove('show');
+
+            try {
+                const { error } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                errorDiv.style.background = '#1B7A3A';
+                errorDiv.textContent = '✅ Pendaftaran berjaya! Sila check email untuk verification link.';
+                errorDiv.classList.add('show');
+                
+                setTimeout(() => {
+                    showLogin();
+                    errorDiv.style.background = '#8b0000';
+                    errorDiv.classList.remove('show');
+                }, 3000);
+
+            } catch (err) {
+                errorDiv.textContent = 'Pendaftaran gagal: ' + err.message;
+                errorDiv.classList.add('show');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Daftar Akaun';
+            }
+        }
+
+        async function handleLogout() {
+            if (confirm('Logout dari sistem?')) {
+                await supabaseClient.auth.signOut();
+            }
+        }
+
+        // Close login modal on outside click
+        document.getElementById('loginOverlay').addEventListener('click', (e) => {
+            if (e.target.id === 'loginOverlay') closeLoginModal();
+        });
+
+        // Enter key for login
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if (document.getElementById('loginOverlay').classList.contains('active')) {
+                    if (document.getElementById('loginForm').style.display !== 'none') {
+                        handleLogin();
+                    } else {
+                        handleRegister();
+                    }
+                }
+            }
+        });
+
         // ===== DATA MURID =====
         let muridData = [];
         let currentModalIndex = null;
         const fotoInput = document.getElementById('fotoInput');
 
-        // ===== FUNGSI UTAMA =====
+        // ===== FUNGSI ASAS =====
         function getRank(peratus) {
             if (peratus >= 96) return { name: "MYTHIC", class: "mythic" };
             if (peratus >= 81) return { name: "LEGEND", class: "legend" };
@@ -365,7 +684,6 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         }
 
-        // Normalize data untuk pastikan nama_murid dipetakan ke nama
         function normalizeData(data) {
             return data.map(row => ({
                 id: row.id,
@@ -410,13 +728,10 @@
             }
         }
 
-        // ===== SEED DATA DEFAULT =====
         async function seedDefaultData() {
             const defaultData = [
                 { nama_murid: "Ahmad bin Ali", kelas: "4 Ar-Rahman", surah: "Al-Baqarah", peratus: 98, streak: 45, xp: 2850, bintang: 42, lencana: ["🏆 Hafiz Muda", "🔥 Streak Master", "⭐ Top 3"] },
-                { nama_murid: "Siti Aisyah binti Hassan", kelas: "5 Al-Furqan", surah: "Ali 'Imran", peratus: 92, streak: 30, xp: 2400, bintang: 35, lencana: ["💎 Diamond Hafiz", "🔥 Streak Master"] },
-                { nama_murid: "Muhammad Irfan", kelas: "4 Ar-Rahman", surah: "An-Nisa'", peratus: 85, streak: 22, xp: 1980, bintang: 28, lencana: ["🌟 Legend Rising", "📖 10 Juzuk"] },
-                { nama_murid: "Nur Aina binti Zainal", kelas: "6 An-Nur", surah: "Al-Maidah", peratus: 78, streak: 18, xp: 1650, bintang: 22, lencana: ["🌟 Legend Rising"] }
+                { nama_murid: "Siti Aisyah binti Hassan", kelas: "5 Al-Furqan", surah: "Ali 'Imran", peratus: 92, streak: 30, xp: 2400, bintang: 35, lencana: ["💎 Diamond Hafiz", " Streak Master"] }
             ];
 
             try {
@@ -498,7 +813,7 @@
                                 <div class="bar-fill bar-${rank.class}" style="width: ${m.peratus}%"></div>
                             </div>
                             <div class="info-row">
-                                <span>📖 ${m.surah}: ${m.peratus}%</span>
+                                <span> ${m.surah}: ${m.peratus}%</span>
                                 <span class="stats-mini">
                                     <span>⭐ ${m.bintang}</span>
                                     <span>🔥 ${m.streak}</span>
@@ -533,22 +848,30 @@
             const rank = getRank(m.peratus);
             const initial = getInitial(m.nama);
 
+            // Determine if user can edit
+            const canEdit = isLoggedIn;
+            const avatarClass = canEdit ? '' : 'guest';
+            const actionBtnClass = canEdit ? '' : 'guest-only';
+            const uploadHint = canEdit ? ' Klik untuk tukar foto' : '';
+            const uploadHint2 = canEdit ? '📷 Klik untuk tambah foto' : '';
+
             let avatarHTML = '';
             if (m.foto_url) {
                 avatarHTML = `<img src="${m.foto_url}" alt="${m.nama}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='${initial}'">
-                              <div class="upload-hint">📷 Klik untuk tukar foto</div>`;
+                              ${canEdit ? `<div class="upload-hint">${uploadHint}</div>` : ''}`;
             } else {
-                avatarHTML = `${initial}<div class="upload-hint">📷 Klik untuk tambah foto</div>`;
+                avatarHTML = `${initial}${canEdit ? `<div class="upload-hint">${uploadHint2}</div>` : ''}`;
             }
 
             const lencana = Array.isArray(m.lencana) ? m.lencana : [];
 
             document.getElementById('modalContent').innerHTML = `
                 <div class="modal-header">
-                    <div class="modal-avatar" onclick="triggerUpload()">${avatarHTML}</div>
+                    <div class="modal-avatar ${avatarClass}" ${canEdit ? 'onclick="triggerUpload()"' : ''}>${avatarHTML}</div>
                     <div class="modal-name">${m.nama}</div>
                     <div class="modal-class">${m.kelas}</div>
                     <div style="margin-top: 10px;"><span class="rank-badge rank-${rank.class}">${rank.name}</span></div>
+                    ${!canEdit ? '<div style="margin-top:8px;font-size:0.75em;color:#888;">🔒 Login untuk edit</div>' : ''}
                 </div>
                 
                 <div style="margin: 20px 0;">
@@ -569,8 +892,8 @@
                     <h3>🏅 Lencana Diperoleh</h3>
                     <div class="badges-list">${lencana.map(l => `<div class="badge-item">${l}</div>`).join('')}</div>
                 </div>
-                <button class="btn-action btn-add-star" onclick="tambahBintang()">➕ Tambah 1 Bintang</button>
-                ${m.foto_url ? `<button class="btn-action btn-delete" onclick="hapusFoto()">🗑️ Padam Foto</button>` : ''}
+                <button class="btn-action btn-add-star ${actionBtnClass}" onclick="tambahBintang()">➕ Tambah 1 Bintang</button>
+                ${m.foto_url && canEdit ? `<button class="btn-action btn-delete" onclick="hapusFoto()">🗑️ Padam Foto</button>` : ''}
             `;
             document.getElementById('modalOverlay').classList.add('active');
         }
@@ -586,10 +909,20 @@
 
         // ===== UPLOAD FOTO =====
         function triggerUpload() {
+            if (!isLoggedIn) {
+                showToast('🔒 Sila login untuk upload foto');
+                showLoginModal();
+                return;
+            }
             if (currentModalIndex !== null) fotoInput.click();
         }
 
         fotoInput.addEventListener('change', async (e) => {
+            if (!isLoggedIn) {
+                showToast('🔒 Sila login dahulu');
+                return;
+            }
+            
             const file = e.target.files[0];
             if (!file || currentModalIndex === null) return;
             
@@ -638,6 +971,10 @@
 
         // ===== HAPUS FOTO =====
         async function hapusFoto() {
+            if (!isLoggedIn) {
+                showToast('🔒 Sila login dahulu');
+                return;
+            }
             if (currentModalIndex === null || !confirm('Padam foto murid ini?')) return;
             
             showLoading(true);
@@ -673,6 +1010,11 @@
 
         // ===== TAMBAH BINTANG =====
         async function tambahBintang() {
+            if (!isLoggedIn) {
+                showToast('🔒 Sila login untuk tambah bintang');
+                showLoginModal();
+                return;
+            }
             if (currentModalIndex === null) return;
             
             const murid = muridData[currentModalIndex];
@@ -726,59 +1068,8 @@
         });
 
         // ===== INIT =====
+        checkAuth();
         loadMuridData();
-    </script>
-
-    <!-- PWA: Service Worker & Install Prompt -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then((registration) => console.log('SW registered:', registration.scope))
-                    .catch((error) => console.log('SW registration failed:', error));
-            });
-        }
-
-        let deferredPrompt;
-        let installButton = null;
-
-        function createInstallButton() {
-            if (installButton) return;
-            installButton = document.createElement('button');
-            installButton.id = 'installBtn';
-            installButton.innerHTML = '📲 Pasang Aplikasi';
-            installButton.style.cssText = `
-                position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
-                background: linear-gradient(135deg, #d4af37, #f7d97b); color: #000;
-                border: none; border-radius: 25px; font-weight: bold; cursor: pointer;
-                box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4); z-index: 1000;
-                font-size: 0.9em; transition: all 0.3s; font-family: 'Segoe UI', sans-serif;
-            `;
-            installButton.onmouseover = () => installButton.style.transform = 'scale(1.05)';
-            installButton.onmouseout = () => installButton.style.transform = 'scale(1)';
-            document.body.appendChild(installButton);
-        }
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            createInstallButton();
-        });
-
-        document.addEventListener('click', async (e) => {
-            if (e.target.id === 'installBtn' && deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                if (installButton) installButton.remove();
-                installButton = null;
-            }
-        });
-
-        window.addEventListener('appinstalled', () => {
-            if (installButton) installButton.remove();
-            installButton = null;
-        });
     </script>
 </body>
 </html>
