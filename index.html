@@ -260,6 +260,8 @@
         }
         .btn-add-star { background: var(--gold); color: #000; }
         .btn-add-star:hover { background: var(--gold-light); transform: scale(1.02); }
+        .btn-streak { background: linear-gradient(135deg, #ff4500, #ff8c00); color: #fff; }
+        .btn-streak:hover { background: linear-gradient(135deg, #ff8c00, #ffd700); transform: scale(1.02); }
         .btn-delete { background: #8b0000; color: #fff; }
         .btn-delete:hover { background: #a00000; }
         .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -702,6 +704,7 @@
                 xp: row.xp || 0,
                 bintang: row.bintang || 0,
                 foto_url: row.foto_url,
+                tarikh: row.tarikh || null,
                 lencana: Array.isArray(row.lencana) 
                     ? row.lencana 
                     : (typeof row.lencana === 'string' ? JSON.parse(row.lencana) : [])
@@ -936,6 +939,7 @@
                     <div class="badges-list">${lencana.map(l => `<div class="badge-item">${l}</div>`).join('')}</div>
                 </div>
                 <button class="btn-action btn-add-star ${actionBtnClass}" onclick="tambahBintang()">➕ Tambah 1 Bintang</button>
+                <button class="btn-action btn-streak ${actionBtnClass}" onclick="tambahStreak()">🔥 Tambah Streak</button>
                 ${m.foto_url && canEdit ? `<button class="btn-action btn-delete" onclick="hapusFoto()">🗑️ Padam Foto</button>` : ''}
             `;
             document.getElementById('modalOverlay').classList.add('active');
@@ -1081,6 +1085,54 @@
             } catch (error) {
                 console.error('Error update bintang:', error);
                 showToast('❌ Gagal simpan bintang: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ===== TAMBAH STREAK =====
+        async function tambahStreak() {
+            if (!isLoggedIn) {
+                showToast('🔒 Sila login untuk tambah streak');
+                showLoginModal();
+                return;
+            }
+            if (currentModalIndex === null) return;
+            
+            const murid = muridData[currentModalIndex];
+            const today = new Date().toISOString().slice(0, 10);
+            const lastDate = murid.tarikh ? new Date(murid.tarikh).toISOString().slice(0, 10) : null;
+            const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+            
+            let newStreak = murid.streak || 0;
+            if (lastDate === today) {
+                showToast('ℹ️ Streak sudah ditambah hari ini');
+                return;
+            } else if (lastDate === yesterday) {
+                newStreak += 1;
+            } else {
+                newStreak = 1;
+            }
+            
+            showLoading(true);
+            try {
+                const { error } = await supabaseClient
+                    .from(TABLE_NAME)
+                    .update({ streak: newStreak, tarikh: new Date().toISOString() })
+                    .eq('id', murid.id);
+                
+                if (error) throw error;
+                
+                muridData[currentModalIndex].streak = newStreak;
+                muridData[currentModalIndex].tarikh = new Date().toISOString();
+                showModal(currentModalIndex);
+                applyFilters();
+                renderStats();
+                showToast('🔥 Streak ditambah! (' + newStreak + ' hari)');
+                
+            } catch (error) {
+                console.error('Error update streak:', error);
+                showToast('❌ Gagal simpan streak: ' + error.message);
             } finally {
                 showLoading(false);
             }
