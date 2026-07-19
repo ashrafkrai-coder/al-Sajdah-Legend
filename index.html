@@ -124,6 +124,12 @@
         }
         .filter-btn:hover { border-color: var(--gold); }
         .filter-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+        #refreshBtn {
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--gold);
+            background: var(--card-bg); color: var(--gold); font-size: 1.2em;
+            cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center;
+        }
+        #refreshBtn:hover { background: var(--gold); color: #000; transform: rotate(180deg); }
 
         .card-murid {
             background: var(--card-bg); border: 2px solid #2a323d; border-radius: 15px;
@@ -399,6 +405,7 @@
 
     <div class="controls">
         <input type="text" class="search-box" id="searchBox" placeholder="🔍 Cari nama murid...">
+        <button id="refreshBtn" onclick="refreshData()" title="Muat semula data">🔄</button>
         <div class="filter-group" id="filterGroup">
             <button class="filter-btn active" data-rank="all">Semua</button>
             <button class="filter-btn" data-rank="mythic">Mythic</button>
@@ -731,7 +738,7 @@
         async function seedDefaultData() {
             const defaultData = [
                 { nama_murid: "Ahmad bin Ali", kelas: "4 Ar-Rahman", surah: "Al-Baqarah", peratus: 98, streak: 45, xp: 2850, bintang: 42, lencana: ["🏆 Hafiz Muda", "🔥 Streak Master", "⭐ Top 3"] },
-                { nama_murid: "Siti Aisyah binti Hassan", kelas: "5 Al-Furqan", surah: "Ali 'Imran", peratus: 92, streak: 30, xp: 2400, bintang: 35, lencana: ["💎 Diamond Hafiz", " Streak Master"] }
+                { nama_murid: "Siti Aisyah binti Hassan", kelas: "5 Al-Furqan", surah: "Ali 'Imran", peratus: 92, streak: 30, xp: 2400, bintang: 35, lencana: ["💎 Diamond Hafiz", "🔥 Streak Master"] }
             ];
 
             try {
@@ -739,13 +746,48 @@
                     .from(TABLE_NAME)
                     .insert(defaultData)
                     .select();
-                
+
                 if (error) throw error;
+
                 muridData = normalizeData(data);
+                renderStats();
+                applyFilters();
                 showToast('✅ Data default berjaya dimuatkan');
             } catch (error) {
                 console.error('Error seeding data:', error);
+                showToast('❌ Gagal muat data default: ' + error.message);
             }
+        }
+
+        // ===== REFRESH DATA =====
+        async function refreshData() {
+            showLoading(true);
+            try {
+                await loadMuridData();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ===== REALTIME SUBSCRIPTION =====
+        function setupRealtime() {
+            const channel = supabaseClient
+                .channel('hafazan-realtime')
+                .on('postgres_changes',
+                    { event: '*', schema: 'public', table: TABLE_NAME },
+                    (payload) => {
+                        console.log('[Realtime] Data berubah:', payload.eventType);
+                        refreshData();
+                    }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('[Realtime] Berlangganan ke hafazan_records');
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.warn('[Realtime] Ralat langganan - dashboard tidak akan auto-kemaskini');
+                        showToast('⚠️ Auto-update rosak. Sila muat semula halaman.');
+                    }
+                });
         }
 
         // ===== RENDER AVATAR =====
@@ -838,6 +880,7 @@
                 <div class="stat-box"><div class="stat-value">${avg}%</div><div class="stat-label">Purata Hafazan</div></div>
                 <div class="stat-box"><div class="stat-value">⭐ ${totalBintang}</div><div class="stat-label">Total Bintang</div></div>
                 <div class="stat-box"><div class="stat-value">${mythicCount}</div><div class="stat-label">Mythic Rank</div></div>
+                <div class="stat-box"><div class="stat-value">🔥 ${topStreak}</div><div class="stat-label">Top Streak</div></div>
             `;
         }
 
@@ -1070,6 +1113,7 @@
         // ===== INIT =====
         checkAuth();
         loadMuridData();
+        setupRealtime();
     </script>
 </body>
 </html>
