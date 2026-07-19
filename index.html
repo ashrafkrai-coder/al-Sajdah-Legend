@@ -699,6 +699,7 @@
                 nama: row.nama_murid || row.nama || 'Tanpa Nama',
                 kelas: row.kelas || '-',
                 surah: row.surah || '-',
+                ayat: row.ayat || '-',
                 peratus: row.peratus || 0,
                 streak: row.streak || 0,
                 xp: row.xp || 0,
@@ -858,7 +859,7 @@
                                 <div class="bar-fill bar-${rank.class}" style="width: ${m.peratus}%"></div>
                             </div>
                             <div class="info-row">
-                                <span> ${m.surah}: ${m.peratus}%</span>
+                                <span> ${m.surah}${m.ayat && m.ayat !== '-' ? ' (Ayat ' + m.ayat + ')' : ''}: ${m.peratus}%</span>
                                 <span class="stats-mini">
                                     <span>⭐ ${m.bintang}</span>
                                     <span>🔥 ${m.streak}</span>
@@ -931,8 +932,8 @@
                     <div class="modal-stat"><div class="modal-stat-value">🔥 ${m.streak}</div><div class="modal-stat-label">Streak</div></div>
                 </div>
                 <div style="background: #0f1318; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center;">
-                    <div style="color: #888; font-size: 0.85em;">Surah Dihafaz</div>
-                    <div style="color: var(--gold); font-size: 1.2em; font-weight: bold; margin-top: 5px;">📖 ${m.surah}</div>
+                    <div style="color: #888; font-size: 0.85em;">Surah &amp; Ayat Dihafaz</div>
+                    <div style="color: var(--gold); font-size: 1.2em; font-weight: bold; margin-top: 5px;">📖 ${m.surah}${m.ayat && m.ayat !== '-' ? ' (Ayat ' + m.ayat + ')' : ''}</div>
                 </div>
                 <div class="badges-section">
                     <h3>🏅 Lencana Diperoleh</h3>
