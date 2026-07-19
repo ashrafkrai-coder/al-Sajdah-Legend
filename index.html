@@ -683,11 +683,11 @@
 
         function formatSurahAyat(m) {
             const surah = (m.surah && m.surah !== '-') ? m.surah : '';
-            const ayat = (m.ayat && m.ayat !== '-') ? m.ayat : '';
-            if (!surah && !ayat) return 'Belum diisi';
-            let text = surah;
-            if (ayat) text += ' (Ayat ' + ayat + ')';
-            return text;
+            const lastAyat = (m.last_ayat && m.last_ayat !== '-') ? m.last_ayat : '';
+            if (surah && lastAyat) return surah + ' (Ayat ' + lastAyat + ')';
+            if (lastAyat) return 'Ayat ' + lastAyat;
+            if (surah) return surah;
+            return m.ayat && m.ayat !== '-' ? 'Ayat ' + m.ayat : '-';
         }
 
         function showToast(message, duration = 3000) {
@@ -709,6 +709,7 @@
                 kelas: row.kelas || '-',
                 surah: row.surah || '-',
                 ayat: row.ayat || '-',
+                last_ayat: row.last_ayat || '-',
                 peratus: row.peratus || 0,
                 streak: row.streak || 0,
                 xp: row.xp || 0,
@@ -941,7 +942,7 @@
                     <div class="modal-stat"><div class="modal-stat-value">🔥 ${m.streak}</div><div class="modal-stat-label">Streak</div></div>
                 </div>
                 <div style="background: #0f1318; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center;">
-                    <div style="color: #888; font-size: 0.85em;">Ayat Dihafaz</div>
+                    <div style="color: #888; font-size: 0.85em;">Ayat Dihafaz Terkini</div>
                     <div style="color: var(--gold); font-size: 1.2em; font-weight: bold; margin-top: 5px;">📖 ${formatSurahAyat(m)}</div>
                 </div>
                 <div class="badges-section">
